@@ -1,0 +1,22 @@
+---
+title: "EZworm test"
+author: "Yacoub Innabi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{UNIX}
+prefetch --option-file SRRdata.txt -O ~/Documents/bioinfo_proj
+
+for fn in *.sra; do fasterq-dump -S $fn; done
+```
+
+# Align
+```{r}
+EZalign()
+```
+

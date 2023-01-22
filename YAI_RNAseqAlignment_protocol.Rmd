@@ -1,0 +1,189 @@
+---
+title: "RNAseq Alignment"
+author: "Yacoub Innabi"
+output: html_notebook
+---
+
+ATTENTION: 
+
+Before you begin, download the file RNAseqAlignment from the lab shared box folder Protocols/Bioinformatics. You need to also make sure you download/install Bioconductor (google it) so that you can install edgeR using BiocManager (google it).
+
+Download all your fastq files to the RNAseqData folder located within the RNAseqAlignment folder. Fastq files are large, so make sure you have enough storage on your device. 
+  IF your data is paired-end, the file names need to contain "_R1_" or "_R2_" for    the respective files, and a .fa extention. Make sure your files also contain the   animal experimental condition, timepoint, etc. For example, follow this format:    Cond1_T1_R1.fa or else the code will not work.
+  IF your data is single-end, you just need to make sure your files contain the .fa   extension and the animal experimental condition, timepoint, etc. For example,      follow this format: Cond1_T1.fa or else the code will not work.
+
+```{r}
+# smes_v2_repeatfil <- smes_v2_repeatfilt_SMESG[smes_v2_repeatfilt_SMESG$gene=="mRNA",]
+# smes_v2_repeatfil <- as.data.frame(smes_v2_repeatfil[,c(9,1,4,5,7)])
+# colnames(smes_v2_repeatfil) <- c("GeneID", "Chr", "Start", "End", "Strand")
+# smes_v2_repeatfil[] <- lapply(smes_v2_repeatfil, function(x) sub('gene_id"', '', x, fixed = TRUE))
+# smes_v2_repeatfil[] <- lapply(smes_v2_repeatfil, function(x) sub(';"', '', x, fixed = TRUE))
+# write_delim(smes_v2_repeatfil, "smes_v2_repeatfil_YAI.saf", delim = "\t")
+
+```
+
+
+##CC1: Setup
+This is where you will install and activate packages needed for the analysis. You will also need to indicate where on your computer the directory (myWD) the files are that you are working on. 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(edgeR) 
+library(knitr)
+library(Rsubread)
+
+
+#First set your working directory. This folder contains the Alignment folder downloaded from the Protols/Bioinformatics folder in the lab shared box drive. In the alignment folder, your RNAseq Fastq files should be stored in a another folder called RNAseqDATA. To set the working directory, place the file path within the quotes below. For example, here is a pathname for a folder on external storage on a mac: "/Volumes/MyProject/" 
+  #If you don't know how to find the pathname for your computer then you can google it.
+
+myWD = "/Volumes/NJO_Lab_SSD/" #Place pathname within the quotes with no spaces then hit the play button at the top right of this code chunk
+knitr::opts_knit$set(root.dir = myWD)
+
+
+
+```
+
+
+
+## CC2: Build index
+If you downloaded the RNAseqAlignment (as instructed above) you have the pre-built index files already. This means YOU DON'T HAVE TO RUN THIS CODE CHUNCK and I have saved you much time. I put this here just for your reference so you can have an idea of how the process works.
+```{r, eval=FALSE}
+YAIgenome <- paste(myWD, 'RNAseqAlignment/YAIgenome.fa', sep = '')
+YAIpredict <- paste(myWD, 'RNAseqAlignment/smes_v2_repeatfil_YAI.saf', sep = '')
+#buildindex(basename="reference_index",reference= YAIgenome)
+buildindex(basename="reference_index",reference= YAIreference)
+
+```
+
+
+## CC3: Align the Reads
+For citatations:
+The genome (10.1038/nature25473) and gene predictions (10.1093/nar/gky1070) were downloaded from PlanMine (10.1093/nar/gky1070).
+
+Attention: This code chunk is for paired-end reads. If your data is not paired-end, run the next chunk.
+```{r, eval=FALSE, results='hide'}
+
+
+RNAseqData <- paste(myWD, "RNAseqAlignment/RNAseqData/", sep = '')
+fastqfiles <- list.files(path = RNAseqData, full.names = TRUE)
+
+#Each pair read file in seperate vectors
+fastqfiles1 <- grep("_R1.fa", fastqfiles, value = TRUE)
+fastqfiles1 <- sort(fastqfiles1)
+fastqfiles2 <- grep("_R2.fa", fastqfiles, value = TRUE)
+fastqfiles2 <- sort(fastqfiles2)
+#Make BAM file names and remove path/extention from names
+BAMfilenames <- substr(fastqfiles1, nchar(RNAseqData), nchar(fastqfiles)-6)
+
+
+#Align reads to genome
+align(index="reference_index",
+      readfile1=fastqfiles1,
+      readfile2 = fastqfiles2,
+      type="rna", 
+      output_file = BAMfilenames,
+      annot.ext = YAIreference
+      isGTF = TRUE)
+
+
+```
+
+
+For single-end reads.
+```{r, eval=FALSE, results='hide'}
+
+
+RNAseqData <- paste(myWD, "RNAseqAlignment/RNAseqData", sep = '')
+fastqfiles <- list.files(path = RNAseqData, full.names = TRUE)
+
+#Make BAM file names and remove path/extention from names
+BAMfilenames <- substr(fastqfiles, nchar(RNAseqData), nchar(fastqfiles)-3)
+
+
+#Align reads to genome
+align(index="reference_index",
+      readfile1=fastqfiles,
+      type="rna", 
+      output_file = BAMfilenames,
+      annot.ext = YAIreference
+      isGTF = TRUE)
+
+
+```
+
+
+## CC4: Get Summary of the Proportion of Reads that Mapped to the Reference Genome
+```{r}
+#collect regeneration .bam files
+#bam.files <- list.files(path = "/Volumes/Beryl_BioCo/Analysis/Alignment/BAMfiles", 
+#                        pattern = ".bam$", 
+#                        full.names = TRUE)
+bam.files <- paste(myWD, "RNAseqAlignment/", BAMfilenames, sep = "")
+bam.path <- paste(myWD, "RNAseqAlignment/",  sep = "")
+bam.files.summary <- list.files(path = bam.path, 
+                        pattern = ".summary$", 
+                        full.names = TRUE)
+
+align_summary <- lapply(bam.files.summary, read.table,  sep="\t", header=FALSE)
+align_summary <- as.data.frame(align_summary)
+rownames(align_summary) <- align_summary[,1]
+align_summary <- align_summary[ ,seq(2,length(align_summary),2)]
+colnames(align_summary) <- BAMfilenames
+align_sum_file <- paste(myWD, "RNAseqAlignment/align_summary.csv", BAMfilenames, sep = "")
+write_csv(align_summary, align_sum_file)
+
+
+```
+
+## CC5: Score Quality
+Most scores should be well over the standard of 20
+```{r, results='hide'}
+# Extract quality scores, there are more files than 7 for this project
+qs <-  vector(mode = "list", length = length(fastqfiles))
+for (x in c(1:length(fastqfiles))) {
+   qs[[x]] <- qualityScores(filename=fastqfiles[x], nreads=100 )
+}
+
+for (x in c(1:length(fastqfiles))) {
+   print(paste(substr(fastqfiles[x], nchar(getwd())+2,  nchar(fastqfiles[x])-13), 
+               " Mean: ", mean(qs[[x]]),
+               " Standard Deviation: ", sd(qs[[x]]) ))
+}
+
+
+
+```
+
+
+
+## CC6: Get the Count Data for paired-end reads
+ATTENTION: If you have single-end reads do not run this code chunk, use the code chunk below.
+```{r, results='hide'}
+
+#
+#regeneration count
+rawcounts <- featureCounts(bam.files, 
+                  annot.ext = YAIreference, 
+                  isGTFAnnotationFile = TRUE, 
+                  GTF.attrType = "gene_id", 
+                  isPairedEnd = TRUE)
+
+write_delim(as.data.frame(rawcounts$counts), paste(myWD, "rawcounts.txt", sep = ""))
+
+```
+
+## CC6: Get the Count Data for single-end reads
+```{r, results='hide'}
+
+#
+#regeneration count
+rawcounts <- featureCounts(bam.files, 
+                  annot.ext = YAIreference, 
+                  isGTFAnnotationFile = TRUE, 
+                  GTF.attrType = "gene_id", 
+                  isPairedEnd = FALSE)
+
+write_delim(as.data.frame(rawcounts$counts), paste(myWD, "rawcounts.txt", sep = ""))
+
+
+```
+
