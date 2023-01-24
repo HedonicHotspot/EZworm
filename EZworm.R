@@ -1,12 +1,12 @@
 packages = c("BiocManager","tidyverse", "ggplot2", "dplyr", "RColorBrewer", 
              "ggthemes", "formattable", "gplots", "readr",  "RColorBrewer", 
              "limma", "edgeR", "Rsubread", "topGO", "circlize", "genefilter",
-             "RSelenium")
-
-
+             "RSelenium", "here", "scriptName", "sjmisc")
 
 ## Load R and BioConductoR packages
 lapply(packages, library, character.only = T)
+
+setwd(here())
 EZ <- list()  # Stores functions
 
 
@@ -25,41 +25,39 @@ EZ <- list()  # Stores functions
 # follow this format: Cond1_T1.fa or else the code will not work.
 
 # Download Genome
-EZ$DLgenome <- function() 
-  {
+EZ$DLgenome <- function() {
   gitlink <- "http://planmine.mpibpc.mpg.de/planmine/model/bulkdata/dd_Smes_g4.fasta.zip"
   getOption('timeout')
   options(timeout=1500)
-  download.file(gitlink, "genome.fa")
+  download.file(gitlink, "genome.fa.zip")
+  unzip("genome.fa.zip")
+  file.rename("dd_Smes_g4.fasta", "genome.fa")
+  
   }
 
-source("")
+
 
 # Fetch Gene Predictions
-EZ$DLgene_predict <- function() 
-{
-  gitlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/main/smes_v2_repeatfil_YAI.saf"
-  as.data.frame(read_table(gitlink))
+EZ$DLgene_predict <- function() {
+  gitlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/28f6502dda9208e6626358b32ebb9e48fd887e7b/smes_v2_repeatfil_YAI.saf"
+  write_file(as.data.frame(read_table(gitlink)), "smes_v2_repeatfil_YAI.saf")
 }
 
 # For aligning RNAseq data
-EZ$index <- function( ) 
-  {
-  if ("genome.fa" %in% list.files() == F){DLgenome()}
+EZ$index <- function() {
+  if ("genome.fa" %in% list.files() == F){EZ$DLgenome()}
   genome <- paste0(getwd(), '/genome.fa')
-  if ("smes_v2_repeatfil_YAI.saf" %in% list.files() == F) {GETgene_predict()}
-  gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf') 
-  RNAseqData <- paste0(getwd(), "/RNAseqData/")
-  fastqfiles <- list.files(path = RNAseqData, full.names = TRUE)
-  fastqfiles <- grep(".fa", fastqfiles, value = TRUE)
   buildindex(basename="reference_index", reference= genome)
-  }
+}
 
-EZ$align <- function() 
-{
+EZ$align <- function() {
   # For paired-end
-  if (sum(grepl("_R1.fa|_R2.fa", fastqfiles)) > 2) 
-  {
+  if (sum(grepl("_R1.fa|_R2.fa", fastqfiles)) > 2) {
+    if ("smes_v2_repeatfil_YAI.saf" %in% list.files() == F) {EZ$DLgene_predict()}
+    gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf') 
+    RNAseqData <- paste0(getwd(), "/RNAseqData/")
+    fastqfiles <- list.files(path = RNAseqData, full.names = TRUE)
+    fastqfiles <- grep(".fa", fastqfiles, value = TRUE)
     #Each pair read file in seperate vectors
     fastqfiles1 <- grep("_R1.fa", fastqfiles, value = TRUE)
     fastqfiles1 <- sort(fastqfiles1)
@@ -109,8 +107,7 @@ EZ$align <- function()
 
   
 
-EZ$BamSummary <- function() 
-  {
+EZ$BamSummary <- function() {
   bam.files.summary <- list.files(path = getwd(), 
                                   pattern = ".summary$", 
                                   full.names = TRUE)
@@ -123,7 +120,7 @@ EZ$BamSummary <- function()
   colnames(align_summary) <- BAMfilenames
   align_sum_file <- paste0(getwd(), "/align_summary.csv", BAMfilenames)
   write_csv(align_summary, align_sum_file)
-  }
+}
 
 
 # Post Alignment Functions
