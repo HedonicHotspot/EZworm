@@ -1,7 +1,7 @@
-packages = c("BiocManager","tidyverse", "ggplot2", "dplyr", "RColorBrewer", 
+packages = c("BiocManager","tidyverse", "ggplot2", "dplyr", 
              "ggthemes", "formattable", "gplots", "readr",  "RColorBrewer", 
              "limma", "edgeR", "Rsubread", "topGO", "circlize", "genefilter",
-             "RSelenium", "here", "scriptName", "sjmisc")
+             "here", "scriptName", "sjmisc", "SRAdbV2")
 
 ## Load R and BioConductoR packages
 lapply(packages, library, character.only = T)
@@ -25,14 +25,14 @@ EZ <- list()  # Stores functions
 # follow this format: Cond1_T1.fa or else the code will not work.
 
 # Download Genome
+# Planmine Schmidtea mediterranea S2F2 genome (FASTA format)
+# Smed genome formatted with newlines (i.e. "\n")
 EZ$DLgenome <- function() {
-  gitlink <- "http://planmine.mpibpc.mpg.de/planmine/model/bulkdata/dd_Smes_g4.fasta.zip"
+  gitlink <- "https://github.com/HedonicHotspot/EZworm/raw/master/genomeYAI.fa.zip"
   getOption('timeout')
   options(timeout=1500)
   download.file(gitlink, "genome.fa.zip")
-  unzip("genome.fa.zip")
-  file.rename("dd_Smes_g4.fasta", "genome.fa")
-  
+  unzip("genomeYAI.fa.zip")
   }
 
 
@@ -40,70 +40,99 @@ EZ$DLgenome <- function() {
 # Fetch Gene Predictions
 EZ$DLgene_predict <- function() {
   gitlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/28f6502dda9208e6626358b32ebb9e48fd887e7b/smes_v2_repeatfil_YAI.saf"
-  write_file(as.data.frame(read_table(gitlink)), "smes_v2_repeatfil_YAI.saf")
+  write.table(as.data.frame(read_table(gitlink)), "smes_v2_repeatfil_YAI.saf")
 }
 
-# For aligning RNAseq data
+# Download Schmidtea Mediterranea gene annotations
+# Gene symbols consist of Augustus and Blast predictions
+EZ$DLannotations <- function() {
+  gitlink <- ""
+  download.file(gitlink, "PlAnnotation.RDS")
+}
+
+# For building reference index
 EZ$index <- function() {
-  if ("genome.fa" %in% list.files() == F){EZ$DLgenome()}
-  genome <- paste0(getwd(), '/genome.fa')
+  if ("genomeYAI.fa" %in% list.files() == F){EZ$DLgenome()}
+  genome <- paste0(getwd(), '/genomeYAI.fa')
   buildindex(basename="reference_index", reference= genome)
 }
 
-EZ$align <- function() {
+# For aligning RNAseq data
+# May input a csv with first column as old RNAseq filenames
+# and second column new filenames EZformatted (i.e includes R1.fa/R2.fa)
+EZ$align <- function(NameCSV = FALSE) {
+  refIndexFiles <- list.files(pattern="reference_index")
+  if (length(refIndexFiles)!=5){ # Download index if not present
+    EZ$index()
+  }
+  
+  # Rename Fastq Files
+  if ( (class(NameCSV) == "character") &
+       (prod(read.csv("EZfastaNames.csv", header = F)[,2] %in% 
+             list.files("RNAseqData")) == 0 )) {
+    file.rename(
+      paste0("RNAseqData/",read.csv(NameCSV, header = F)[,1]), 
+      paste0("RNAseqData/",read.csv(NameCSV, header = F)[,2])
+    )
+  }
+  
+  gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf') 
+  RNAseqData <- paste0(getwd(), "/RNAseqData/")
+  fastqfiles <- list.files(path = "RNAseqData", full.names = TRUE)
+  fastqfiles <- grep(".fa", fastqfiles, value = TRUE)
+  
   # For paired-end
-  if (sum(grepl("_R1.fa|_R2.fa", fastqfiles)) > 2) {
+  if (sum(grepl("R1.fa|R2.fa", ignore.case = T, fastqfiles)) > 2) {
     if ("smes_v2_repeatfil_YAI.saf" %in% list.files() == F) {EZ$DLgene_predict()}
-    gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf') 
-    RNAseqData <- paste0(getwd(), "/RNAseqData/")
-    fastqfiles <- list.files(path = RNAseqData, full.names = TRUE)
-    fastqfiles <- grep(".fa", fastqfiles, value = TRUE)
     #Each pair read file in seperate vectors
-    fastqfiles1 <- grep("_R1.fa", fastqfiles, value = TRUE)
+    fastqfiles1 <- grep("R1.fa", fastqfiles, value = TRUE)
     fastqfiles1 <- sort(fastqfiles1)
-    fastqfiles2 <- grep("_R2.fa", fastqfiles, value = TRUE)
+    fastqfiles2 <- grep("R2.fa", fastqfiles, value = TRUE)
     fastqfiles2 <- sort(fastqfiles2)
     # Make BAM file names and remove path/extention from names
-    BAMfilenames <- substr(fastqfiles1, nchar(RNAseqData), nchar(fastqfiles)-6)
+    BAMfilenames <- gsub("RNAseqData/|_R1.fasta.gz|_R1.fa", "", 
+                         fastqfiles1, ignore.case = T)
     # Align reads to genome
-    align(index="reference_index",
-          readfile1=fastqfiles1,
-          readfile2 = fastqfiles2,
-          type="rna", 
-          output_file = BAMfilenames,
-          annot.ext = gene_predict,
-          isGTF = TRUE)
+    if ( prod(BAMfilenames %in% list.files()) == 0) {
+      align(index="reference_index",
+            readfile1=fastqfiles1,
+            readfile2 = fastqfiles2,
+            type="rna", 
+            output_file = BAMfilenames,
+            annot.ext = read.table(gene_predict, header = T),
+            isGTF = TRUE)      
+    }
+
     # Get annotated raw counts
-    rawcounts <- featureCounts(bam.files, 
-                               annot.ext = gene_predict,
+    rawcounts <- featureCounts(BAMfilenames, 
+                               annot.ext = read.table(gene_predict, header = T),
                                isPairedEnd = TRUE)
     
-    write_delim(as.data.frame(rawcounts$counts), paste(getwd(), "/rawcounts.txt", sep = ""))
+    write_rds(rawcounts, "rawcounts.RDS")
   }
-  # For single end
-  else 
-  {
+  
+  # For single-end
+  else {
     #Make BAM file names and remove path/extention from names
-    BAMfilenames <- substr(fastqfiles, nchar(RNAseqData), nchar(fastqfiles)-3)
+    BAMfilenames <- gsub("RNAseqData/|.fasta.gz|.fasta|.fa|.fa.gz", "", 
+                         fastqfiles, ignore.case = T)
+    if ( prod(BAMfilenames %in% list.files()) == 0) {
     #Align reads to genome
     align(index="reference_index",
           readfile1=fastqfiles,
           type="rna", 
           output_file = BAMfilenames,
-          annot.ext = gene_predict,
+          annot.ext = read.table(gene_predict, header = T),
           isGTF = TRUE)
-    bam.files <- paste0(getwd(), "/RNAseqAlignment/", BAMfilenames)
-    bam.path <- paste0(getwd(), "/RNAseqAlignment/")
-    rawcounts <- featureCounts(bam.files, 
-                               annot.ext = gene_predict,
+    }  
+
+    rawcounts <- featureCounts(BAMfilenames, 
+                               annot.ext = read.table(gene_predict, header = T),
                                isPairedEnd = FALSE)
     
-    write_delim(as.data.frame(rawcounts$counts), 
-                paste0(getwd(), "/rawcounts.txt"))
+    write_rds(rawcounts, "rawcounts.RDS")
   }
 }
-
-
 
   
 
@@ -147,12 +176,36 @@ EZ$hm_order <- function(df, cols = c(1), decr = FALSE){
 
 
 # Column to Rownames
-#Takes the first column and makes it a row.
-
+# Takes the first column and makes it a row.
 # rename dataframe rows from selected column
 EZ$col2namerow <- function(df, col=1) {
   rownames(df) <- df[,col]
   df <- df[,-col]
+  return(df)
+}
+
+# Sum transcript counts to gene counts
+EZ$SumTrans <- function(counts) {
+  merge(counts, read_rds("PlAnnotation.RDS")[,1:2], by.x = 0, by.y = 2) %>%
+    group_by(GeneID) %>%
+    summarise(across(metadata$samples,sum)) %>% as.data.frame() %>%
+    col2namerow()  
+}
+
+
+
+# Rename rows from Gene IDs to gene symbols
+EZ$gene2sym <- function (df,IDinRow = T){
+  if (IDinRow) {
+    df <- merge(df, read_rds("PlAnnotation.RDS")[,c("GeneID", "Symbol")], 
+                by.x = 0, by.y = "GeneID") |>
+      col2namerow("Symbol") |> dplyr::select(-"Row.names")
+  }
+  else {
+    df <- merge(df, read_rds("PlAnnotation.RDS")[,c("GeneID", "Symbol")], 
+                by = "GeneID") |> dplyr::select(-"GeneID")
+    
+  }
   return(df)
 }
 
@@ -170,4 +223,5 @@ EZ$list2csv <- function(DFlist, File = 'DFlist.csv') {
   }
   dev.off()
 }
+
 
