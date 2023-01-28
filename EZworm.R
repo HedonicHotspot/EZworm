@@ -49,6 +49,21 @@ EZ$DLannotations <- function() {
   download.file(gitlink, "PlAnnotation.RDS")
 }
 
+EZ$sampleData <- function() {
+  gitlinks <- c("https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R1_001.fastq.zip",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R2_001.fastq.zip",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R1_001.fastq.zip",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R2_001.fastq.zip")
+  FileNames <- c("RNAseqData/C71_S76_L006_R1_001.fastq.zip", "RNAseqData/C71_S76_L006_R2_001.fastq.zip",
+                 "RNAseqData/P42_S71_L006_R1_001.fastq.zip", "RNAseqData/P42_S71_L006_R2_001.fastq.zip")
+  for (ind in 1:length(gitlinks)) {
+    download.file(gitlinks[ind], FileNames[ind])
+    unzip(FileNames[ind])
+  }
+  csvlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/master/EZfastaNames.csv"
+  download.file(csvlink, "EZfastaNames.csv")
+}
+
 # For building reference index
 EZ$index <- function() {
   if ("genomeYAI.fa" %in% list.files() == F){EZ$DLgenome()}
@@ -59,6 +74,7 @@ EZ$index <- function() {
 # For aligning RNAseq data
 # May input a csv with first column as old RNAseq filenames
 # and second column new filenames EZformatted (i.e includes R1.fa/R2.fa)
+# Ex. EZ$align(NameCSV = "EZfastaNames.csv")
 EZ$align <- function(NameCSV = FALSE) {
   refIndexFiles <- list.files(pattern="reference_index")
   if (length(refIndexFiles)!=5){ # Download index if not present

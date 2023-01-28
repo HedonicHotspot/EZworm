@@ -1,4 +1,4 @@
-SRR7850877_1.fastq.gz,WT1.fasta.gz
-SRR7850877_2.fastq.gz,WT2.fasta.gz
-SRR7850878_1.fastq.gz,EXP1.fasta.gz
-SRR7850878_2.fastq.gz,EXP2.fasta.gz
+C71_S76_L006_R1_001.fastq.,WT_R1.fastq
+C71_S76_L006_R2_001.fastq,WT_R2.fastq
+P42_S71_L006_R1_001.fastq,EXP_R1.fastq
+P42_S71_L006_R2_001.fastq,EXP_R2.fastq
