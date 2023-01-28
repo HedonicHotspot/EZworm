@@ -30,7 +30,7 @@ EZ$DLgenome <- function() {
   gitlink <- "https://github.com/HedonicHotspot/EZworm/raw/master/genomeYAI.fa.zip"
   getOption('timeout')
   options(timeout=1500)
-  download.file(gitlink, "genome.fa.zip")
+  download.file(gitlink, "genomeYAI.fa.zip")
   unzip("genomeYAI.fa.zip")
   }
 
