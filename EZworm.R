@@ -1,12 +1,11 @@
 packages = c("BiocManager","tidyverse", "ggplot2", "dplyr", 
              "ggthemes", "formattable", "gplots", "readr",  "RColorBrewer", 
              "limma", "edgeR", "Rsubread", "topGO", "circlize", "genefilter",
-             "here", "scriptName", "sjmisc", "SRAdbV2")
+              "scriptName")
 
 ## Load R and BioConductoR packages
 lapply(packages, library, character.only = T)
 
-setwd(here())
 EZ <- list()  # Stores functions
 
 
@@ -39,14 +38,14 @@ EZ$DLgenome <- function() {
 
 # Fetch Gene Predictions
 EZ$DLgene_predict <- function() {
-  gitlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/28f6502dda9208e6626358b32ebb9e48fd887e7b/smes_v2_repeatfil_YAI.saf"
+  gitlink <- "https://github.com/HedonicHotspot/EZworm/raw/master/smes_v2_repeatfil_YAI.saf"
   write.table(as.data.frame(read_table(gitlink)), "smes_v2_repeatfil_YAI.saf")
 }
 
 # Download Schmidtea Mediterranea gene annotations
 # Gene symbols consist of Augustus and Blast predictions
 EZ$DLannotations <- function() {
-  gitlink <- ""
+  gitlink <- "https://github.com/HedonicHotspot/EZworm/raw/master/PlAnnotation.RDS"
   download.file(gitlink, "PlAnnotation.RDS")
 }
 
