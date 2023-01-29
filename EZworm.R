@@ -1,7 +1,6 @@
 packages = c("BiocManager","tidyverse", "ggplot2", "dplyr", 
              "ggthemes", "formattable", "gplots", "readr",  "RColorBrewer", 
-             "limma", "edgeR", "Rsubread", "topGO", "circlize", "genefilter",
-              "scriptName")
+             "limma", "edgeR", "Rsubread", "topGO", "circlize", "genefilter")
 
 ## Load R and BioConductoR packages
 lapply(packages, library, character.only = T)
