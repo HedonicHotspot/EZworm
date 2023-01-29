@@ -1,4 +1,4 @@
-C71_S76_L006_R1_001.fastq.,WT_R1.fastq
-C71_S76_L006_R2_001.fastq,WT_R2.fastq
-P42_S71_L006_R1_001.fastq,EXP_R1.fastq
-P42_S71_L006_R2_001.fastq,EXP_R2.fastq
+C71_S76_L006_R1_001.fastq.gz,WT_R1.fastq.gz
+C71_S76_L006_R2_001.fastq.gz,WT_R2.fastq.gz
+P42_S71_L006_R1_001.fastq.gz,EXP_R1.fastq.gz
+P42_S71_L006_R2_001.fastq.gz,EXP_R2.fastq.gz
