@@ -32,6 +32,7 @@ EZ$DLgenome <- function() {
   options(timeout=1500)
   download.file(gitlink, "genomeYAI.fa.zip")
   unzip("genomeYAI.fa.zip")
+  file.remove("genomeYAI.fa.zip")
   }
 
 
@@ -39,7 +40,7 @@ EZ$DLgenome <- function() {
 # Fetch Gene Predictions
 EZ$DLgene_predict <- function() {
   gitlink <- "https://github.com/HedonicHotspot/EZworm/raw/master/smes_v2_repeatfil_YAI.saf"
-  write.table(as.data.frame(read_table(gitlink)), "smes_v2_repeatfil_YAI.saf")
+  download.file(gitlink, "smes_v2_repeatfil_YAI.saf")
 }
 
 # Download Schmidtea Mediterranea gene annotations
@@ -50,21 +51,22 @@ EZ$DLannotations <- function() {
 }
 
 EZ$sampleData <- function() {
-  gitlinks <- c("https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R1_001.fastq.zip",
-                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R2_001.fastq.zip",
-                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R1_001.fastq.zip",
-                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R2_001.fastq.zip")
-  FileNames <- c("RNAseqData/C71_S76_L006_R1_001.fastq.zip", "RNAseqData/C71_S76_L006_R2_001.fastq.zip",
-                 "RNAseqData/P42_S71_L006_R1_001.fastq.zip", "RNAseqData/P42_S71_L006_R2_001.fastq.zip")
-  for (ind in 1:length(gitlinks)) {
-    download.file(gitlinks[ind], FileNames[ind])
-    unzip(FileNames[ind])
-  }
+  gitlinks <- c("https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R1_001.fastq.gz",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/C71_S76_L006_R2_001.fastq.gz",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R1_001.fastq.gz",
+                "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R2_001.fastq.gz")
+  FileNames <- c("C71_S76_L006_R1_001.fastq.gz", "C71_S76_L006_R2_001.fastq.gz",
+                 "P42_S71_L006_R1_001.fastq.gz", "P42_S71_L006_R2_001.fastq.gz")
+
+  dir.create("RNAseqData")
+  file.copy(FileNames, "RNAseqData")
+  file.remove(FileNames)
   csvlink <- "https://raw.githubusercontent.com/HedonicHotspot/EZworm/master/EZfastaNames.csv"
   download.file(csvlink, "EZfastaNames.csv")
 }
 
 # For building reference index
+# Takes 15-20 minutes
 EZ$index <- function() {
   if ("genomeYAI.fa" %in% list.files() == F){EZ$DLgenome()}
   genome <- paste0(getwd(), '/genomeYAI.fa')
