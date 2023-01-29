@@ -211,6 +211,7 @@ EZ$col2namerow <- function(df, col=1) {
 }
 
 # Sum transcript counts to gene counts
+# Here the rows of counts must be SMEST IDs
 EZ$SumTrans <- function(counts) {
   merge(counts, read_rds("PlAnnotation.RDS")[,1:2], by.x = 0, by.y = 2) %>%
     group_by(GeneID) %>%
@@ -221,6 +222,8 @@ EZ$SumTrans <- function(counts) {
 
 
 # Rename rows from Gene IDs to gene symbols
+# IDinRow = T assumes the rownames are the GeneIDs
+# If IDinRow = F, there must be a column named GeneID
 EZ$gene2sym <- function (df,IDinRow = T){
   if (IDinRow) {
     df <- merge(df, read_rds("PlAnnotation.RDS")[,c("GeneID", "Symbol")], 
@@ -239,6 +242,7 @@ EZ$gene2sym <- function (df,IDinRow = T){
 # Print List of Dataframes to single csv page
 # Useful for reporting GO results of several samples
 # Useful for reporting genes grouped by functions
+# File is the desired output name for your file
 EZ$list2csv <- function(DFlist, File = 'DFlist.csv') {
   pdf(File)
   for (ind in 1:length(DFlist)) {
