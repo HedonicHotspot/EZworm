@@ -197,17 +197,25 @@ EZ$hm_order <- function(df, cols = c(1), decr = FALSE){
 # Takes the first column and makes it a row.
 # rename dataframe rows from selected column
 EZ$col2namerow <- function(df, col=1) {
-  rownames(df) <- df[,col]
-  df <- df[,-col]
-  return(df)
+  if (class(col)=="character") {
+    rownames(df) <- df[,col]
+    df <- dplyr::select(df,-col)
+    return(df)
+  }
+  else {
+    rownames(df) <- df[,col]
+    df <- df[,-col]
+    return(df)
+  }
+
 }
 
 # Sum transcript counts to gene counts
 EZ$SumTrans <- function(counts) {
   merge(counts, read_rds("PlAnnotation.RDS")[,1:2], by.x = 0, by.y = 2) %>%
     group_by(GeneID) %>%
-    summarise(across(metadata$samples,sum)) %>% as.data.frame() %>%
-    col2namerow()  
+    summarise(across(colnames(counts),sum)) %>% as.data.frame() %>%
+    EZ$col2namerow()  
 }
 
 
@@ -217,7 +225,7 @@ EZ$gene2sym <- function (df,IDinRow = T){
   if (IDinRow) {
     df <- merge(df, read_rds("PlAnnotation.RDS")[,c("GeneID", "Symbol")], 
                 by.x = 0, by.y = "GeneID") |>
-      col2namerow("Symbol") |> dplyr::select(-"Row.names")
+      EZ$col2namerow("Symbol") |> dplyr::select(-"Row.names")
   }
   else {
     df <- merge(df, read_rds("PlAnnotation.RDS")[,c("GeneID", "Symbol")], 
