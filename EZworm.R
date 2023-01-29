@@ -57,7 +57,9 @@ EZ$sampleData <- function() {
                 "https://github.com/HedonicHotspot/EZworm/raw/master/RNAseqData/P42_S71_L006_R2_001.fastq.gz")
   FileNames <- c("C71_S76_L006_R1_001.fastq.gz", "C71_S76_L006_R2_001.fastq.gz",
                  "P42_S71_L006_R1_001.fastq.gz", "P42_S71_L006_R2_001.fastq.gz")
-
+  for (ind in 1:length(gitlinks)) {
+    download.file(gitlinks[ind], FileNames[ind])
+  }
   dir.create("RNAseqData")
   file.copy(FileNames, "RNAseqData")
   file.remove(FileNames)
