@@ -87,13 +87,14 @@ EZalign <- function(NameCSV = FALSE) {
             readfile1=fastqfiles,
             type="rna",
             output_file = BAMfilenames,
-            annot.ext = read.table(gene_predict, header = T),
             isGTF = TRUE)
     }
 
     rawcounts <- featureCounts(BAMfilenames,
                                annot.ext = read.table(gene_predict, header = T),
-                               isPairedEnd = FALSE)
+                               isPairedEnd = FALSE,
+                               allowMultiOverlap = TRUE,
+                               fraction = T)
 
     write_rds(rawcounts, "rawcounts.RDS")
   }
