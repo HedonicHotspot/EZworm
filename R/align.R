@@ -32,13 +32,19 @@ EZalign <- function(NameCSV = FALSE) {
   }
 
 
-  if ( (class(NameCSV) == "character") &
-       (prod(read.csv("EZfastaNames.csv", header = F)[,2] %in%
-             list.files("RNAseqData")) == 0 )) {
-    file.rename(
-      paste0("RNAseqData/",read.csv(NameCSV, header = F)[,1]),
-      paste0("RNAseqData/",read.csv(NameCSV, header = F)[,2])
-    )
+  if (class(NameCSV) == "character"){
+    if(prod(read.csv("EZfastaNames.csv", header = F)[,2] %in%
+            list.files("RNAseqData")) == 0 ) {
+              file.rename(
+                paste0("RNAseqData/",read.csv(NameCSV, header = F)[,1]),
+                paste0("RNAseqData/",read.csv(NameCSV, header = F)[,2])
+              )
+    
+    }
+  }
+  
+  if(){
+    if()
   }
 
   gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf')
