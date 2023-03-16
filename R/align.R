@@ -71,7 +71,9 @@ EZalign <- function(NameCSV = FALSE) {
 
     rawcounts <- featureCounts(BAMfilenames,
                                annot.ext = read.table(gene_predict, header = T),
-                               isPairedEnd = TRUE)
+                               isPairedEnd = TRUE,
+                               allowMultiOverlap = TRUE,
+                               fraction = TRUE)
 
     write_rds(rawcounts, "rawcounts.RDS")
   }
