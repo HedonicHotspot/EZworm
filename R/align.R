@@ -43,9 +43,6 @@ EZalign <- function(NameCSV = FALSE) {
     }
   }
   
-  if(){
-    if()
-  }
 
   gene_predict <- paste0(getwd(),'/smes_v2_repeatfil_YAI.saf')
   RNAseqData <- paste0(getwd(), "/RNAseqData/")
