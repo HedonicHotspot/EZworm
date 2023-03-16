@@ -64,7 +64,6 @@ EZalign <- function(NameCSV = FALSE) {
             readfile2 = fastqfiles2,
             type="rna",
             output_file = BAMfilenames,
-            annot.ext = read.table(gene_predict, header = T),
             isGTF = TRUE)
     }
 
