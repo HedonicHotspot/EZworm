@@ -21,7 +21,7 @@
 #' Additionally, make sure the file names indicate the animal experimental condition and timepoint.
 #' For example, the format could be Cond1_T1_R1.fa. If your data is single-end, ensure the file names
 #' contain the .fa extension, animal experimental condition and timepoint too.
-#' For example, the format could be Cond1_T1.fa..
+#' For example, the format could be Cond1_T1.fa.
 #'
 #' @export
 
